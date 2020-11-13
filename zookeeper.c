@@ -10,6 +10,7 @@
 #include <bits/stdc++.h>
 #include <vector>
 #include "cell.h"
+#include <limits.h>
 
 Display *display_ptr;
 Screen *screen_ptr;
@@ -265,7 +266,7 @@ int zoopath(int a[][4], int b, int c[][2], int d)
 
   // get the center coordinate of each rectangle
   Point src = {55,55,0};
-  Point dest = {55,235,1};
+  Point dest = {55,254,1};
   vector<Edge> edges;
 
   find_edges(src, dest, edges, a, b);
@@ -273,7 +274,8 @@ int zoopath(int a[][4], int b, int c[][2], int d)
   return(0);
 }
 
-/* find possible edge for src and dest */
+
+/* find possible edge for src and dest */ /* xu yao gai cheng bu jia qu fen de qing kuang */
 /* obtain the valid edges for each source and destination 
    for Dijkastra's algorithm */
 void find_edges(Point src, Point dest, vector<Edge> edges, int obstacle_rec[][4], int b){
@@ -297,7 +299,7 @@ void find_edges(Point src, Point dest, vector<Edge> edges, int obstacle_rec[][4]
       tmp.src_y = obstacle_rec[i][0];
       tmp.dest_x = obstacle_rec[i][2];
       tmp.dest_y = obstacle_rec[i][1];
-      //tmp.dist = sqrt(pow((tmp.dest_y-tmp.src_y),2) + pow((tmp.dest_x-tmp.src_x),2));
+      tmp.dist = sqrt(pow((tmp.dest_y-tmp.src_y),2) + pow((tmp.dest_x-tmp.src_x),2));
       //printf("the edge distance is: %2d\n", tmp.dist);
       //printf("X_1: %d, X_2: %d, Y_1: %d, Y_2: %d\n", tmp.src_x, tmp.dest_x, tmp.src_y, tmp.dest_y);
       //printf("the edge distance is: %.2f\n", tmp.dist);
@@ -308,7 +310,7 @@ void find_edges(Point src, Point dest, vector<Edge> edges, int obstacle_rec[][4]
       tmp.src_y = obstacle_rec[i][0];
       tmp.dest_x = obstacle_rec[i][3];
       tmp.dest_y = obstacle_rec[i][1];
-      //tmp.dist = sqrt(pow((tmp.dest_y-tmp.src_y),2) + pow((tmp.dest_x-tmp.src_x),2));
+      tmp.dist = sqrt(pow((tmp.dest_y-tmp.src_y),2) + pow((tmp.dest_x-tmp.src_x),2));
       //printf("the edge distance is: %.2f\n", tmp.dist);
       rec_edges.push_back(tmp);
 
@@ -317,7 +319,7 @@ void find_edges(Point src, Point dest, vector<Edge> edges, int obstacle_rec[][4]
       tmp.src_y = obstacle_rec[i][0];
       tmp.dest_x = obstacle_rec[i][3];
       tmp.dest_y = obstacle_rec[i][0];
-      //tmp.dist = sqrt(pow((tmp.dest_y-tmp.src_y),2) + pow((tmp.dest_x-tmp.src_x),2));
+      tmp.dist = sqrt(pow((tmp.dest_y-tmp.src_y),2) + pow((tmp.dest_x-tmp.src_x),2));
       //printf("the edge distance is: %.2f\n", tmp.dist);
       rec_edges.push_back(tmp);
 
@@ -326,7 +328,7 @@ void find_edges(Point src, Point dest, vector<Edge> edges, int obstacle_rec[][4]
       tmp.src_y = obstacle_rec[i][1];
       tmp.dest_x = obstacle_rec[i][3];
       tmp.dest_y = obstacle_rec[i][1];
-      //tmp.dist = sqrt(pow((tmp.dest_y-tmp.src_y),2) + pow((tmp.dest_x-tmp.src_x),2));
+      tmp.dist = sqrt(pow((tmp.dest_y-tmp.src_y),2) + pow((tmp.dest_x-tmp.src_x),2));
       //printf("the edge distance is: %.2f\n", tmp.dist);
       rec_edges.push_back(tmp);
     }
@@ -335,6 +337,7 @@ void find_edges(Point src, Point dest, vector<Edge> edges, int obstacle_rec[][4]
   }
   printf("The size of vector(should be 36) is: %ld\n", rec_edges.size());
   /* above end */
+
 
   /* create edges by connecting all the rectangles corners with another rectangle corner 
      ignoring the corners of source, destination and disgonal */
@@ -556,6 +559,15 @@ void find_edges(Point src, Point dest, vector<Edge> edges, int obstacle_rec[][4]
   }
   printf("The size of vector(should be 656) is: %ld\n", edges.size());
 
+
+  /* create edges by connecting source center and destination center */
+  tmp.src_x = src.x;
+  tmp.src_y = src.y;
+  tmp.dest_x = dest.x;
+  tmp.dest_y = dest.y;
+  edges.push_back(tmp);
+  printf("The size of vector(should be 657) is: %ld\n", edges.size());
+
   /* judge whether the edge crosses with rectangle sides (exclude source and destination rectangle) */
   // rectangle sides size
   int rec_size = rec_edges.size();
@@ -598,10 +610,26 @@ void find_edges(Point src, Point dest, vector<Edge> edges, int obstacle_rec[][4]
     count = 0; // update count 
   } // outside loop end
 
-  printf("The num is: %d\n", num);
+  //printf("The num is: %d\n", num);
+  //printf("The valid edges are: %ld\n", valid_edges.size());
+
+  
+  /* calculate valid edge's length */
+  for(int i=0; i<valid_edges.size(); i++){
+    valid_edges[i].dist = sqrt(pow((valid_edges[i].dest_y-valid_edges[i].src_y),2) + pow((valid_edges[i].dest_x-valid_edges[i].src_x),2));
+  }
+
+
+  /* add rectangle sides to vector */
+  for(int i=0; i<rec_edges.size(); i++){
+    valid_edges.push_back(rec_edges[i]);
+  }
+
   printf("The valid edges are: %ld\n", valid_edges.size());
 
-}// func end
+}
+/* find_edges function end */
+
 
 /* selected non-cross edges */
 int find_valid_edges(Edge e1, Edge e2){ // e1 means rectangle sides; e2 means candidate edges
@@ -633,3 +661,184 @@ int find_valid_edges(Edge e1, Edge e2){ // e1 means rectangle sides; e2 means ca
         return 1; // 1 means these 2 edges not cross
 
 }
+/* find_valid_edges function end */
+
+
+double Dijkastra(Point src, Point dest, vector<Edge> valid_edges){
+
+  // initialize source vertex
+  Point source, destination;
+  source.x = src.x;
+  source.y = src.y;
+  source.distance = 0;
+  destination.x = dest.x;
+  destination.y = dest.y;
+
+  // save the determined vertex and distance
+  Point tmpp_d; // determined Point
+  Point tmpp_c; // candidate Point
+  vector<Point> determined_vex; // save decided vertex
+  vector<Point> candidate_vex; // save undicided vertex
+  
+
+  // initialization
+  tmpp_d.x = source.x;
+  tmpp_d.y = source.y;
+  tmpp_d.distance = source.distance;
+  determined_vex.push_back(tmpp_d);
+  candidate_vex.push_back(tmpp_d);
+  bool flag = true; // for initialization
+
+  // traverse less than 38 times; every time find one shortest vertex
+  for(int n=0; n<37; n++){
+    // if reach destination, the loop end.
+    Point tail;
+    tail = determined_vex.back();
+    if(destination.x == tail.x && destination.y == tail.y){
+      return destination.distance;
+    }
+    else{
+      for(int i=0; i<valid_edges.size(); i++){
+        // if the new vertex exist in candidate_vex, ignor it; otherwise add it to candidate_vex
+        if(tmpp_d.x == valid_edges[i].src_x && tmpp_d.y == valid_edges[i].src_y){ // "source" is one point of edge
+          for(int j=0; j<candidate_vex.size(); j++){
+            if(candidate_vex[i].x == valid_edges[i].dest_x && candidate_vex[i].y == valid_edges[i].dest_y){ // vertex already exist in candidate_vex
+              continue;
+            }
+            else{
+              // add it to candidate
+              tmpp_c.x = valid_edges[i].dest_x;
+              tmpp_c.y = valid_edges[i].dest_y;
+              tmpp_c.distance = valid_edges[i].dist + tmpp_d.distance; // distance to the source point
+              candidate_vex.push_back(tmpp_c);
+              }
+            }
+          }
+        // delete it
+        else if(source.x == valid_edges[i].dest_x && source.y == valid_edges[i].dest_y){ // source is one point of edge
+          for(int j=0; j<candidate_vex.size(); j++){
+            if(candidate_vex[i].x == valid_edges[i].src_x && candidate_vex[i].y == valid_edges[i].src_y){ // vertex already exist in candidate_vex
+              continue;
+            }
+            else{
+              // add it to candidate
+              tmpp_c.x = valid_edges[i].src_x;
+              tmpp_c.y = valid_edges[i].src_y;
+              tmpp_c.distance = valid_edges[i].dist + tmpp_d.distance; // distance to the source point
+              candidate_vex.push_back(tmpp_c);
+              }
+            }
+          }
+        } // get all candidate_vex
+
+        // only fire once, remove the source from candidate_vex
+        if(flag){
+          candidate_vex.erase(candidate_vex.begin());
+          flag = false;
+        }
+        
+
+        // find the vex with shortest distance in the candidate_vex, and add it to determined_vex 
+        int index = 0;
+        for(int i=0; i<candidate_vex.size(); i++){
+          double min = 10000; // INF
+          if(candidate_vex[i] <= min){
+            min = candidate_vex[i];
+            index++;
+          }
+        }
+
+        determined_vex.push_back(candidate_vex[index]); // push the shortest to the determined_vex
+
+        Point tmp = candidate_vex[index]; // save it temporary
+
+        candidate_vex.erase(candidate_vex.begin() + index - 1); // delete determined vertex from candidate vector
+
+        // update distance of vex in candidate if it's shorter through determined vex
+        for(int i=0; i<candidate_vex.size(); i++){
+          for(int j=0; j<valid_edges.size(); j++){ // find the edge connecting with candidate_vex and determined_vex
+            if((tmp.x == valid_edges[j].src_x && tmp.y == valid_edges[j].src_y && candidate_vex[i].x == valid_edges[j].dest_x && candidate_vex[i].y == valid_edges[j].dest_y)){
+              if(candidate_vex[i].distance > (tmp.distance + valid_edges[j].dist)){
+                // update distance
+                candidate_vex[i].distance = tmp.distance + valid_edges[j].dist;
+              }
+            }
+          }
+        }
+
+        
+        // delete the edge connection with (tmpp_d.x, tmpp_d.y) and (tmp.x, tmp.y)
+        // for(int i=0; i<valid_edges.size(); i++){
+        //   if(tmpp_d.x == valid_edges[i].src_x && tmpp_d.y == valid_edges[i].src_y && tmp.x == valid_edges[i].dest_x && tmp.y == valid_edges[i].dest_y){
+        //     valid_edges.erase(valid_edges.begin() + i);
+        //   }
+        // }
+        // // delete the edge connection with (tmp.x, tmp.y) and (tmpp_d.x, tmpp_d.y)
+        // for(int i=0; i<valid_edges.size(); i++){
+        //   if(tmp.x == valid_edges[i].src_x && tmp.y == valid_edges[i].src_y && tmpp_d.x == valid_edges[i].dest_x && tmpp_d.y == valid_edges[i].dest_y){
+        //     valid_edges.erase(valid_edges.begin() + i);
+        //   }
+        // }
+
+        // update the pre drive vertex
+        tmpp_d = tmp;
+
+      }
+    }
+
+}
+
+
+
+
+// archive code
+// // seek for minimum dist away from the src
+//         double min = 10000; // INF
+//         if(valid_edges[i].dist < min){
+//           min = valid_edges[i].dist;
+          
+//           tmpp_d.x = valid_edges[i].dest_x;
+//           tmpp_d.y = valid_edges[i].dest_y;
+//           tmpp_d.distance = valid_edges[i].dist;
+//         }
+//       }
+//     }
+
+//     determined_vex.push_back(tmpp_d); // add the shortest vex away from source to determined_vex vector
+    
+//     // delete determined vex from candidate vector
+//     int index = 0;
+//     for(int i=0; i<candidate_vex.size(); i++){
+//       if(tmpp_d.x == candidate_vex[i].x && tmpp_d.y == candidate_vex[i].y){
+//         break;
+//       }
+//       else{
+//         index++;
+//       }
+//     }
+//     candidate_vex.erase(candidate_vex.begin() + index); // delete determined vex from candidate vector
+
+//     // update distance of vex in candidate if it's shorter through determined vex
+//     for(int i=0; i<candidate_vex.size(); i++){
+//       for(int j=0; j<valid_edges.size(); j++){ // find the edge connecting with candidate_vex and determined_vex
+//         if((candidate_vex[i].x == valid_edges[j].src_x && candidate_vex[i].y == valid_edges[j].src_y && tmpp_d.x == valid_edges[j].dest_x && tmpp_d.y == valid_edges[j].dest_y)
+//          ||(candidate_vex[i].x == valid_edges[j].dest_x && candidate_vex[i].y == valid_edges[j].dest_y && tmpp_d.x == valid_edges[j].src_x && tmpp_d.y == valid_edges[j].src_y)){
+//           if(candidate_vex[i].distance >= (tmpp_d.distance + valid_edges[j].dist)){
+//             // update distance
+//             candidate_vex[i].distance = tmpp_d.distance + valid_edges[j].dist;
+//           }
+//         }
+//       }
+//     }
+
+    // find the vex with shortest distance in the candidate_vex, and add it to determined_vex 
+    // int index = 0;
+    // for(int i=0; i<candidate_vex.size(); i++){
+    //   double min = 10000; // INF
+    //   if(candidate_vex[i] <= min){
+    //     min = candidate_vex[i];
+    //     index++;
+    //   }
+    // }
+    // determined_vex.push_back(candidate_vex[index]); // push the shortest to the determined_vex
+    // candidate_vex.erase(candidate_vex.begin() + index - 1); // delete determined vex from candidate vector
