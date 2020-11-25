@@ -1,24 +1,32 @@
 #include <stdbool.h>
-//#include <vector>
+#include <vector>
 using namespace std; 
 
-
-/* To store matrix cell coordinates */
+/* To store cell coordinates and rectangle # */
 class Point
 {
 public:
-	int x; // x coordinate
-	int y; // y coordinate
-	int id; // inner value of rectangle
+	long int x; // x coordinate
+	long int y; // y coordinate
+	int id; // rectangle number	
 };
 
 /* To store edges */
 class Edge
 {
 public:
-	int src_x; // source x
-	int src_y; // source y
-	int dest_x; // destination x
-	int dest_y; // destination y
-	double dist; // distance of the edge
+	Point start; // start point
+	Point end;   // end point
+	int weight; // distance of the edge
 };
+
+/* vertex for Dijkastra */
+class Vertex
+{
+public:
+	Point vex;
+	vector<Edge> neighbor; // save the neighbor edges
+};
+
+
+
