@@ -43,17 +43,19 @@ XColor tmp_color1, tmp_color2;
 
 int zoopath(int a[][4], int b, int c[][2], int d);
 
-void find_edges(Vertex src, Vertex dest, vector<Edge> &edges, vector<Vertex> vertexes, int b);
+void find_edges(Vertex src, Vertex dest, vector<Edge> &edges, vector<Vertex> vertexes);
 
 int find_valid_edges(Edge e1, Edge e2);
 
 int Dijkastra(Vertex src, Vertex dest, vector<Vertex> vertexes);
 
-void Prim(int matrix[][11], vector<Edge> &sequence);
+void Prim(int b, int* matrix, vector<Edge> &sequence);
 
 void run_dfs(int v, bool visited[], list<int>* adj, vector<int> &index);
 
-void find_nonblock_line(Vertex src, Vertex dest, vector<Edge> &edges, vector<Vertex> vertexes, int b);
+void find_nonblock_line(Vertex src, Vertex dest, vector<Edge> &edges, vector<Vertex> vertexes);
+
+void find_block_id(Vertex src, Vertex dest, vector<Vertex> vertexes, vector<int> &id);
 
 
 int main(int argc, char **argv)
@@ -265,7 +267,7 @@ int main(int argc, char **argv)
 int zoopath(int a[][4], int b, int c[][2], int d)
 {
   // distance matrix
-  int dist_matrix[11][11]={0};
+  int dist_matrix[b][b]={0};
   // pick 2 rectangles from the 11 rectangles and calculate shortest distance
   for(int i=0; i<b; i++){
     for(int j=0; j<b; j++){
@@ -308,7 +310,7 @@ int zoopath(int a[][4], int b, int c[][2], int d)
 
       
       /* find valid edges */
-      find_edges(src, dest, edges, rec_vertex, b);
+      find_edges(src, dest, edges, rec_vertex);
       //printf("Size of the valide edges (should be) are: %ld\n", edges.size());
 
       /* for each vertex(withou src and dest), find the neighbor edges */
@@ -343,24 +345,24 @@ int zoopath(int a[][4], int b, int c[][2], int d)
   }
 }
   
-  for(int i=0; i<11; i++){
-    for(int j=0; j<11; j++){
+  for(int i=0; i<b; i++){
+    for(int j=0; j<b; j++){
       printf("%d\t", dist_matrix[i][j]);
     }
     printf("\n");
   }
   /* call Prim algorithm to obtain the vertexes sequence */
   vector<Edge> sequence;
-  Prim(dist_matrix, sequence);
+  Prim(b, &dist_matrix[0][0], sequence);
 
   //printf("Size of sequence: %d\n", sequence.size());
   //printf("Size of 3.id: %d\n", sequence[0].end.id);
 
 
   list<int>* adj;
-  adj = new list<int>[11];
+  adj = new list<int>[b];
   for(int i=0; i<sequence.size(); i++){
-    for(int j=0; j<11; j++){
+    for(int j=0; j<b; j++){
       if(j == sequence[i].start.id){
         adj[j].push_back(sequence[i].end.id);
       }
@@ -368,7 +370,7 @@ int zoopath(int a[][4], int b, int c[][2], int d)
   }
 
   // check adj
-  // for(int j=0; j<11; j++){
+  // for(int j=0; j<b; j++){
   //   list<int>::iterator i;
   //   for (i = adj[j].begin(); i != adj[j].end(); ++i){
   //     printf("Size of adj: %d\n", *i);
@@ -376,15 +378,16 @@ int zoopath(int a[][4], int b, int c[][2], int d)
   // }
 
   /* run dfs */
-  bool visited[11];
-  for(int i=0; i<11; i++){
+  bool visited[b];
+  for(int i=0; i<b; i++){
     visited[i] = false;
   }
   vector<int> index;
   run_dfs(0, visited, adj, index); //0 3 4 5 1 6 2 9 10 8 7 0
   printf("\n");
+  delete [] adj;
 
-  //index.push_back(0);
+  index.push_back(0);
 
   //check index seqence
   printf("Sequence is:");
@@ -395,26 +398,27 @@ int zoopath(int a[][4], int b, int c[][2], int d)
 
 
 
-  /* generate actual path */ /* generate actual path */ /* generate actual path */
+  /* generate actual path generate actual path generate actual path */
 
-  int k=0; // temporary pathlength
-  int cc[100][2]; // temporary path
+  //int k=0; // temporary pathlength
+  //int cc[100][2]; // temporary path
+  vector<Point> path_list;
 
-  for(int i=0; i<index.size()-1; i++){
+  for(int k=0; k<index.size()-1; k++){
     vector<Vertex> src;
     vector<Vertex> dest;
     Vertex start;
     Vertex end;
     for(int x=0; x<2; x++){
       for(int y=2; y<4; y++){
-        start.vex.x = a[index[i]][x];
-        start.vex.y = a[index[i]][y];
-        start.vex.id = index[i];
+        start.vex.x = a[index[k]][x];
+        start.vex.y = a[index[k]][y];
+        start.vex.id = index[k];
         src.push_back(start);
 
-        end.vex.x = a[index[i+1]][x];
-        end.vex.y = a[index[i+1]][y];
-        end.vex.id = index[i+1];
+        end.vex.x = a[index[k+1]][x];
+        end.vex.y = a[index[k+1]][y];
+        end.vex.id = index[k+1];
         dest.push_back(end);
       }
     }
@@ -449,17 +453,19 @@ int zoopath(int a[][4], int b, int c[][2], int d)
 
       int min = 500;
       int distance;
-      int n;
+      //int n;
       Point dr1, dr2;
       vector<Edge> edges;
+      vector<int> id;
+      int count; // for judge if all 4 x 4 vertexes have non valide lines
     
-    for(int i=0; i<src.size(); i++){
-      for(int j=0; j<dest.size(); j++){
+    for(int x=0; x<src.size(); x++){
+      for(int y=0; y<dest.size(); y++){
         /* find valid edges */
-        find_nonblock_line(src[i], dest[j], edges, rec_vertex, b);
+        find_nonblock_line(src[x], dest[y], edges, rec_vertex);
         /* calculate valid edge's length */
-        for(int i=0; i<edges.size(); i++){
-          edges[i].weight = int(sqrt(pow((edges[i].end.y-edges[i].start.y),2) + pow((edges[i].end.x-edges[i].start.x),2)));
+        for(int j=0; j<edges.size(); j++){
+          edges[j].weight = int(sqrt(pow((edges[j].end.y-edges[j].start.y),2) + pow((edges[j].end.x-edges[j].start.x),2)));
         }
 
         if(!edges.empty()){
@@ -478,78 +484,128 @@ int zoopath(int a[][4], int b, int c[][2], int d)
               }
             }
 
-            cc[k][0] = dr1.x;
-            cc[k][1] = dr1.y;
-            cc[k+1][0] = dr2.x;
-            cc[k+1][1] = dr2.y;
+            // cc[k][0] = dr1.x;
+            // cc[k][1] = dr1.y;
+            // cc[k+1][0] = dr2.x;
+            // cc[k+1][1] = dr2.y;
           }
           
           // judge which rectangle block our src and dest
           else{
+            count++;
+            
             continue;
             //printf("It's empty empty empty empty\n");
           }       
       }
     }
 
-    k += 2;
-    edges.clear(); // release for next 2 cage
+    // for all 16 lines. they are all blocked
+    // int ind=0;
+    // if(count == 16){ 
+    //   find_block_id(src[0], dest[0], rec_vertex, id);
+    //   printf("All block id is: between cage %d and cage %d\n", src[0].vex.id, dest[0].vex.id);
+    //   for(int i=0; i<id.size(); i++){
+    //     if(id[i] != src[0].vex.id && id[i] != dest[0].vex.id){
+    //       ind = id[i];
+    //       printf("Blocked cages are: %d\n", id[i]);
+    //       break; // ready get the nearest block cage id
+    //     }
+    //   }
 
-  }
+    //   index.insert(index.begin()+i+1, ind); // insert the block cage id
+    //   i--;
+    // } // obtain the shortest path ignore the block situation
+    // for all 16 lines. they are all blocked
+    int ind=0;
+    int dir_min = INT_MAX;
+    int dir_distance = 0;
+    int idx_x, idx_y;
+    if(count == 16){
+      for(int i=0; i<src.size(); i++){
+        for(int j=0; j<dest.size(); j++){
+          dir_distance = int(sqrt(pow((dest[j].vex.y-src[i].vex.y),2) + pow((dest[j].vex.x-src[i].vex.x),2)));
+          if(dir_min > dir_distance){
+            dir_min = dir_distance;
+            idx_x = i;
+            idx_y = j;
+          }
+        }
+      } 
+      find_block_id(src[idx_x], dest[idx_y], rec_vertex, id);
+      printf("All block id is: between cage %d and cage %d\n", src[idx_x].vex.id, dest[idx_y].vex.id);
+      for(int i=0; i<id.size(); i++){
+        if(id[i] != src[idx_x].vex.id && id[i] != dest[idx_y].vex.id){
+          ind = id[i];
+          printf("Blocked cages are: %d\n", id[i]);
+          break; // ready get the nearest block cage id
+        }
+      }
 
-  
-  //printf("K value: %d\n", k);
-  int path=0;
-  for(int i=0;i<k-1;i++){
-    if(cc[i][0] == cc[i+1][0] && cc[i][1] == cc[i+1][1]){
-      c[path][0] = cc[i][0];
-      c[path][1] = cc[i][1];
-      i++;
-      path++;
-    } // neighbor same
-    else if(cc[i][0] != cc[i+1][0] && cc[i][1] != cc[i+1][1]){
-      c[path][0] = cc[i][0];
-      c[path][1] = cc[i][1];
+      index.insert(index.begin()+k+1, ind); // insert the block cage id
+      k--;
+    } // obtain the shortest path ignore the block situation
 
-      c[path+1][0] = cc[i][0];
-      c[path+1][1] = cc[i+1][1];
+    
 
-      c[path+2][0] = cc[i+1][0];
-      c[path+2][1] = cc[i+1][1];
 
-      path += 3;
-    }//diagonal 
-    else{
-      c[path][0] = cc[i][0];
-      c[path][1] = cc[i][1];
+    
 
-      c[path+1][0] = cc[i+1][0];
-      c[path+1][1] = cc[i+1][1];
+    path_list.push_back(dr1);
+    path_list.push_back(dr2);
 
-      path += 2;
+    for(int i=0; i<id.size(); i++){
+      printf("%d is blocked me\n", id[i]);
     }
 
+    //k += 2;
+    edges.clear(); // release for next 2 cages
+    src.clear(); // release for next 2 cages
+    dest.clear(); // release for next 2 cages
+    id.clear(); // release for next 2 cages
+    count = 0; // update count for next 2 cages
+
   }
-  // cage 7 to cage 0
-  c[34][0] = 40;
-  c[34][1] = 400;
-  path += 1; 
 
-  c[35][0] = 40;
-  c[35][1] = 230;
-  path += 1; 
 
-  c[36][0] = 10;
-  c[36][1] = 200;
-  path += 1;
+  int path=0;
 
-  c[37][0] = 10;
-  c[37][1] = 120;
-  path += 1;
+  printf("K value is: %d\n", path_list.size());
+  for(int i=0;i<path_list.size();i++){
 
-  c[38][0] = 10;
-  c[38][1] = 100;
-  path += 1; 
+    printf("(%d,%d)-", path_list[i].x,path_list[i].y);
+  }
+
+  for(int i=0; i<path_list.size(); i++){
+    if(path_list[i].x == path_list[i+1].x && path_list[i].y == path_list[i+1].y){
+      c[path][0] = path_list[i].x;
+      c[path][1] = path_list[i].y;
+      i++;
+      path++;
+    } // same point
+    else if(path_list[i].x != path_list[i+1].x && path_list[i].y != path_list[i+1].y && path_list[i].id == path_list[i+1].id){
+      c[path][0] = path_list[i].x;
+      c[path][1] = path_list[i].y;
+
+      c[path+1][0] = path_list[i].x;
+      c[path+1][1] = path_list[i+1].y;
+
+      path += 2;
+    } // diagonal line
+    else{
+      c[path][0] = path_list[i].x;
+      c[path][1] = path_list[i].y;
+      path++;
+    }
+  }
+
+  printf("===========\n");
+
+  for(int i=0; i<path; i++){
+    printf("(%d,%d)-", c[i][0],c[i][1]);
+  }
+
+  path_list.clear();
 
   return(path);
 }
@@ -558,7 +614,7 @@ int zoopath(int a[][4], int b, int c[][2], int d)
 /* find possible edge for src and dest */ 
 /* obtain the valid edges for each source and destination 
    for Dijkastra's algorithm */
-void find_edges(Vertex src, Vertex dest, vector<Edge> &edges, vector<Vertex> vertexes, int b){
+void find_edges(Vertex src, Vertex dest, vector<Edge> &edges, vector<Vertex> vertexes){
   /* get all rectangle sides */
   vector<Edge> rec_edges;
   Edge rec_tmp;
@@ -783,15 +839,15 @@ int Dijkastra(Vertex src, Vertex dest, vector<Vertex> vertexes){
 
 
 /* Prims algorithm */
-void Prim(int matrix[][11], vector<Edge> &sequence){
+void Prim(int b, int* matrix, vector<Edge> &sequence){
   /* initialization */
   int min = INT_MAX;
   int x,y;
-  int visited[11] = {0};
+  int visited[b] = {0};
   visited[0] = 1;
-  for(int j=1; j<11; j++){
-    if(min>matrix[0][j]){
-      min = matrix[0][j];
+  for(int j=1; j<b; j++){
+    if(min>*(matrix + 0*b + j)){
+      min = *(matrix + 0*b + j);
       x = 0;
       y = j;
     }
@@ -801,19 +857,19 @@ void Prim(int matrix[][11], vector<Edge> &sequence){
   Edge edge_tmp;
   edge_tmp.start.id = x;
   edge_tmp.end.id = y;
-  edge_tmp.weight = matrix[0][y];
+  edge_tmp.weight = *(matrix + 0*b + y);
   sequence.push_back(edge_tmp);
 
-  printf("Sequence is: %d -> %d : %d\n", x, y, matrix[0][y]);
+  printf("Sequence is: %d -> %d : %d\n", x, y, *(matrix + 0*b + y));
 
   /* loop */
-  for(int n=0; n<9; n++){
+  for(int n=0; n<b-2; n++){
     min = INT_MAX; // refresh min distance
-    for(int i=0; i<11; i++){
+    for(int i=0; i<b; i++){
       if(visited[i] != 0){
-        for(int j=0; j<11; j++){
-          if(visited[j] == 0 && min > matrix[i][j]){
-            min = matrix[i][j];
+        for(int j=0; j<b; j++){
+          if(visited[j] == 0 && min > *(matrix + i*b + j)){
+            min = *(matrix + i*b + j);
             x = i;
             y = j;
           }
@@ -824,10 +880,10 @@ void Prim(int matrix[][11], vector<Edge> &sequence){
 
     edge_tmp.start.id = x;
     edge_tmp.end.id = y;
-    edge_tmp.weight = matrix[x][y];
+    edge_tmp.weight = *(matrix + x*b + y);
     sequence.push_back(edge_tmp);
 
-    printf("Sequence is: %d -> %d : %d\n", x, y, matrix[x][y]);
+    printf("Sequence is: %d -> %d : %d\n", x, y, *(matrix + x*b + y));
   }
 }
 
@@ -855,10 +911,8 @@ void run_dfs(int v, bool visited[], list<int>* adj, vector<int> &index)
 /* traversal recursion function ends */
 
 
-/* find possible edge for src and dest */ 
-/* obtain the valid edges for each source and destination 
-   for Dijkastra's algorithm */
-void find_nonblock_line(Vertex src, Vertex dest, vector<Edge> &edges, vector<Vertex> vertexes, int b){
+/* find nonblock line for sequence vertexes line */ 
+void find_nonblock_line(Vertex src, Vertex dest, vector<Edge> &edges, vector<Vertex> vertexes){
   /* get all rectangle sides */
   vector<Edge> rec_edges;
   Edge rec_tmp;
@@ -909,4 +963,47 @@ void find_nonblock_line(Vertex src, Vertex dest, vector<Edge> &edges, vector<Ver
 
   /* check the valide edges end */
 
-}/* find_edges function end */
+}/* find_nonblock_line function end */
+
+
+void find_block_id(Vertex src, Vertex dest, vector<Vertex> vertexes, vector<int> &id){
+  /* get all rectangle sides */
+  vector<Edge> rec_edges;
+  Edge rec_tmp;
+  for(int i=0; i<vertexes.size(); i++){
+    for(int j=0; j<vertexes.size(); j++){
+      /* same rectangle(include src and dest) */
+      if(vertexes[i].vex.id == vertexes[j].vex.id){
+        if(vertexes[i].vex.x == vertexes[j].vex.x && vertexes[i].vex.y == vertexes[j].vex.y || vertexes[i].vex.x != vertexes[j].vex.x && vertexes[i].vex.y != vertexes[j].vex.y){
+          // same vertex or diagonal
+          continue;
+        }
+        else{
+          rec_tmp.start = vertexes[i].vex;
+          rec_tmp.end = vertexes[j].vex;
+          rec_tmp.weight = int(sqrt(pow((vertexes[j].vex.y-vertexes[i].vex.y),2) + pow((vertexes[j].vex.x-vertexes[i].vex.x),2)));
+          rec_edges.push_back(rec_tmp);
+        }
+      }
+      else
+        continue;
+    }
+  }
+  //printf("Size of rectangle sides(should be 72) are: %ld\n", rec_edges.size());
+
+  Edge candidate_edges;
+  /* edges connection src and dest */
+  candidate_edges.start = src.vex;
+  candidate_edges.end = dest.vex;
+
+
+  /* check the block id */
+  for(int j=0; j<rec_edges.size(); j++){
+    if(!find_valid_edges(rec_edges[j], candidate_edges)){
+        id.push_back(rec_edges[j].start.id);  
+    }
+    else // not cross
+      continue;
+  }
+
+}/* find_block_id function end */
