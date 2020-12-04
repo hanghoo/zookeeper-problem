@@ -1,5 +1,5 @@
 # zookeeper-problem
-Dijkstra's algorithm, minimum spanning trees
+Dijkstra's algorithm, minimum spanning trees, DFS
 
 Compile line: g++ zookeeper.c -lX11 -lm
 
