@@ -1,0 +1,32 @@
+for each pair of rectangles(you can consider index of rectangle while taking pair) for eg: 01, 02,......011,...1011:
+	create a graph with all the vertices apart from source and destination, centre of source, centre of destination
+	create edges by connecting all the rectangles corners with another rectangle corner ignoring the corners of source and destination
+  	Add edges connecting source centr to destination centre, and add edges connecting source centr and destination centre to all other rectangle vertices
+  	Now, we get all possible edges. Then, we need to select valid candidate edges.
+	for each edges:
+    		check (if this edge crosses any other rectangle edges(without source and destination rectangle edges):
+    		if cross:
+	 		discard.
+		if does not cross: 
+      			add the edge to graph edge list. 
+      			compute distance which will be the weight of the edge
+  
+run dijaktra across these graph which will give distance from i to j
+
+
+
+class Vertex里面存有坐标(x,y),到source的distance，visit flag，和neighbor edge vector。
+class Edge里面存有起点和终点的坐标，以及weight。
+
+申请了2个vector<Vertex>,一个是存放确定最短的顶点determined_vex，一个是待定candidate_vex。
+
+初始化，把Vertex source的visit flag置为true，顶点push到determined_vex容器里。
+1. 把Vertex source里的neighbor edge对应的vertex push到candidate_vex里面。并把visit flag置为true
+2. 根据source的distance（此时=0），和edge的weight,计算candidate_vex里顶点到source的distance。并赋值给这些candidate_vex里的顶点。
+3. 遍历candidate_vex容器，找到distance最短的顶点i，将顶点i加入到determined_vex，并且从candidate_vex删除掉顶点i。
+开始循环：
+4. 遍历Vertex i里的neighbor edge对应的vertex。如果vertex j没有visit，push到candidate_vex。push之后把visit flag置为true；如果vertex j有visit，比较vertex j.distance
+   和vertex i.distance + edge weight的大小，前者大的话更新，小的话不变。
+5. 遍历candidate_vex容器，找到distance最短的顶点k，将顶点k加入到determined_vex，并且从candidate_vex删除掉顶点k。
+重复4~5直到找到destination.
+
